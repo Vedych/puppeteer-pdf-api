@@ -6,26 +6,23 @@ export default async function handler(req, res) {
   try {
     browser = await chromium.puppeteer.launch({
       args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath || process.env.CHROME_EXECUTABLE_PATH,
+      executablePath: await chromium.executablePath,
       headless: chromium.headless,
     });
 
     const page = await browser.newPage();
-    await page.setContent('<h1>Hello from Puppeteer PDF API</h1>', {
-      waitUntil: 'networkidle0',
-    });
-
+    await page.setContent('<h1>Hello from Puppeteer PDF API</h1>');
     const pdfBuffer = await page.pdf({ format: 'A4' });
 
     await browser.close();
 
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'inline; filename="document.pdf"');
-    res.end(pdfBuffer);
+    res.setHeader('Content-Disposition', 'inline; filename=document.pdf');
+    res.send(pdfBuffer);
   } catch (error) {
-    console.error('PDF generation failed:', error);
+    console.error('PDF generation error:', error);
     if (browser) await browser.close();
     res.status(500).send('PDF generation failed');
   }
 }
+
