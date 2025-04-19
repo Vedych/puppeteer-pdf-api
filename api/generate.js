@@ -1,16 +1,31 @@
-import puppeteer from 'puppeteer';
+import chromium from 'chrome-aws-lambda';
 
 export default async function handler(req, res) {
-  const browser = await puppeteer.launch({
-    args: ['--no-sandbox'],
-    headless: 'new',
-  });
-  const page = await browser.newPage();
-  await page.setContent('<h1>Hello from Puppeteer PDF API</h1>');
-  const pdf = await page.pdf({ format: 'A4' });
-  await browser.close();
+  let browser = null;
 
-  res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', 'inline; filename=document.pdf');
-  res.send(pdf);
+  try {
+    browser = await chromium.puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath || process.env.CHROME_EXECUTABLE_PATH,
+      headless: chromium.headless,
+    });
+
+    const page = await browser.newPage();
+    await page.setContent('<h1>Hello from Puppeteer PDF API</h1>', {
+      waitUntil: 'networkidle0',
+    });
+
+    const pdfBuffer = await page.pdf({ format: 'A4' });
+
+    await browser.close();
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'inline; filename="document.pdf"');
+    res.end(pdfBuffer);
+  } catch (error) {
+    console.error('PDF generation failed:', error);
+    if (browser) await browser.close();
+    res.status(500).send('PDF generation failed');
+  }
 }
