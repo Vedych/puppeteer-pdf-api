@@ -20,9 +20,10 @@ export default async function handler(req, res) {
     res.setHeader('Content-Disposition', 'inline; filename=document.pdf');
     res.send(pdfBuffer);
   } catch (error) {
-    console.error('PDF generation error:', error);
+    console.error('PDF generation error:', error); // <--- добавь это
     if (browser) await browser.close();
     res.status(500).send('PDF generation failed');
   }
 }
+
 
